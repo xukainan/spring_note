@@ -62,6 +62,19 @@ public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSu
 		return bean;
 	}
 
+	/**
+	 // 1. 如果属性 this.advisor 为 null 或者目标 bean 本身是一个 AopInfrastructureBean,
+	 // 则不对目标 bean 做包装处理，而是直接返回目标 bean
+	 // 2. 否则如果目标 bean 是 Advised 实例，未被冻结，并且符合当前 BeanPostProcessor
+	 // 自定义的条件，则将 this.advisor 添加给它
+	 // 3. 否则如果目标 bean  也不是 Advised 实例，但是符合当前 BeanPostProcessor
+	 // 自定义的条件，则将为目标 bean 创建一个代理对象，将 this.advisor 添加给代理对象,
+	 // 然后返回该代理对象用于代理目标 bean
+	 // 4. 目标 bean 不符合当前 BeanPostProcessor 自定义的条件，则直接返回目标 bean 自身。
+	 * @param bean the new bean instance
+	 * @param beanName the name of the bean
+	 * @return
+	 */
 	@Override
 	public Object postProcessAfterInitialization(Object bean, String beanName) {
 		if (this.advisor == null || bean instanceof AopInfrastructureBean) {
@@ -70,7 +83,10 @@ public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSu
 		}
 
 		if (bean instanceof Advised) {
+			// 目标 bean 已经实现了接口 Advised，所以直接使用 Advised
+			// 接口定义的能力添加 Advisor
 			Advised advised = (Advised) bean;
+			//isEligible 提供实现检测目标bean是否符合被添加Advisor的条件。
 			if (!advised.isFrozen() && isEligible(AopUtils.getTargetClass(bean))) {
 				// Add our local Advisor to the existing proxy's Advisor chain...
 				if (this.beforeExistingAdvisors) {
@@ -84,6 +100,9 @@ public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSu
 		}
 
 		if (isEligible(bean, beanName)) {
+			// 目标 bean 符合当前 BeanPostProcessor 添加 Advisor 的条件
+
+			// 准备相应的代理创建工厂
 			ProxyFactory proxyFactory = prepareProxyFactory(bean, beanName);
 			if (!proxyFactory.isProxyTargetClass()) {
 				evaluateProxyInterfaces(bean.getClass(), proxyFactory);
@@ -96,6 +115,8 @@ public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSu
 			if (classLoader instanceof SmartClassLoader && classLoader != bean.getClass().getClassLoader()) {
 				classLoader = ((SmartClassLoader) classLoader).getOriginalClassLoader();
 			}
+
+			// 创建代理对象
 			return proxyFactory.getProxy(classLoader);
 		}
 

@@ -35,7 +35,7 @@ include "spring-webflux"
 include "spring-webmvc"
 include "spring-websocket"
 include "framework-bom"
-include "integration-tests"
+
 
 rootProject.name = "spring"
 rootProject.children.each {project ->
@@ -56,3 +56,4 @@ settings.gradle.projectsLoaded {
 		}
 	}
 }
+

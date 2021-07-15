@@ -546,39 +546,58 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		synchronized (this.startupShutdownMonitor) {
 			StartupStep contextRefresh = this.applicationStartup.start("spring.context.refresh");
 
+			//容器预先准备，记录容器的启动时间和标记
 			// Prepare this context for refreshing.
 			prepareRefresh();
 
+			//创建Bean工厂，有则销毁，没有则创建
+			//里面有对BeanDefinition的装载
 			// Tell the subclass to refresh the internal bean factory.
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
+			//配置Bean工厂的上下文特性，如类装载器、PostProcesser
 			// Prepare the bean factory for use in this context.
 			prepareBeanFactory(beanFactory);
 
 			try {
+
+				//允许在上下文的子类中对bean factory进行后处理
+				//spring中并没有具体去实现postProcessBeanFactory方法，是提供给想要实现BeanPostProcessor的三方框架使用的
 				// Allows post-processing of the bean factory in context subclasses.
 				postProcessBeanFactory(beanFactory);
 
 				StartupStep beanPostProcess = this.applicationStartup.start("spring.context.beans.post-process");
+
+				//在Bean未开始实例化前，对BeanDefinition的修改入口
+				//比如PropertyPlaceholderConfigurer在这里被调用
+				//BeanFactoryPostProcessor:实现该接口，可以在spring的bean创建之前，修改bean的定义属性。
 				// Invoke factory processors registered as beans in the context.
 				invokeBeanFactoryPostProcessors(beanFactory);
 
+				//注册用于拦截Bean创建过程中的BeanPostProcessors
+				//BeanPostProcessor，可以在spring容器实例化bean之后，在执行bean的初始化方法前后，添加一些自己的处理逻辑
 				// Register bean processors that intercept bean creation.
 				registerBeanPostProcessors(beanFactory);
 				beanPostProcess.end();
 
+				//初始化MessageSource(多语言)
 				// Initialize message source for this context.
 				initMessageSource();
 
+				//初始化上下文广播事件
 				// Initialize event multicaster for this context.
 				initApplicationEventMulticaster();
 
+				//空实现, 能被复写来添加特殊context刷新工作的模板方法。在实例化单例之前,调用初始化特殊bean.
 				// Initialize other special beans in specific context subclasses.
 				onRefresh();
 
+				//注册监听器
 				// Check for listener beans and register them.
 				registerListeners();
 
+				//完成容器的初始化
+				//preInstantiateSingletons方法会完成单例Bean的创建
 				// Instantiate all remaining (non-lazy-init) singletons.
 				finishBeanFactoryInitialization(beanFactory);
 
@@ -743,6 +762,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * <p>Must be called before singleton instantiation.
 	 */
 	protected void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFactory beanFactory) {
+		// 1.getBeanFactoryPostProcessors(): 拿到当前应用上下文beanFactoryPostProcessors变量中的值
+		//	2.invokeBeanFactoryPostProcessors: 实例化并调用所有已注册的BeanFactoryPostProcessor
 		PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(beanFactory, getBeanFactoryPostProcessors());
 
 		// Detect a LoadTimeWeaver and prepare for weaving, if found in the meantime
