@@ -75,11 +75,14 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 
 
 	/** Cache of singleton objects: bean name to bean instance. */
+	// 一级缓存，缓存正常的bean实例
 	private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
 
+	// 三级缓存，缓存bean实例的ObjectFactory
 	/** Cache of singleton factories: bean name to ObjectFactory. */
 	private final Map<String, ObjectFactory<?>> singletonFactories = new HashMap<>(16);
 
+	// 二级缓存，缓存还未进行依赖注入和初始化方法调用的bean实例
 	/** Cache of early singleton objects: bean name to bean instance. */
 	private final Map<String, Object> earlySingletonObjects = new ConcurrentHashMap<>(16);
 
@@ -179,19 +182,33 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	@Nullable
 	protected Object getSingleton(String beanName, boolean allowEarlyReference) {
 		// Quick check for existing instance without full singleton lock
+		// 尝试从缓存中获取成品的目标对象，如果存在，则直接返回
+		// 一级缓存
 		Object singletonObject = this.singletonObjects.get(beanName);
+		// 如果缓存中不存在目标对象，则判断当前对象是否已经处于创建过程中，在前面的讲解中，第一次尝试获取A对象的实例之后，就会将A对象标记为正在创建中，因而最后再尝试获取A对象的时候，这里的if判断就会为true
+		// 当前需要获取的bean正在创建中时，代表出现了循环依赖（或者一前一后并发获取这个bean）
+		// 这个时候才需要去看二、三级缓存
 		if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
+			// 从二级缓存获取
 			singletonObject = this.earlySingletonObjects.get(beanName);
 			if (singletonObject == null && allowEarlyReference) {
 				synchronized (this.singletonObjects) {
 					// Consistent creation of early reference within full singleton lock
+					// 这里的singletonFactories是一个Map，其key是bean的名称，而值是一个ObjectFactory类型的对象，这里对于A和B而言，调用图其getObject()方法返回的就是A和B对象的实例，无论是否是半成品
 					singletonObject = this.singletonObjects.get(beanName);
 					if (singletonObject == null) {
 						singletonObject = this.earlySingletonObjects.get(beanName);
 						if (singletonObject == null) {
+							// 二级缓存也没有，并且允许获取早期引用的话 - allowEarlyReference传进来是true
 							ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
 							if (singletonFactory != null) {
+								// 获取目标对象的实例
+								// 从三级缓存获取ObjectFactory
 								singletonObject = singletonFactory.getObject();
+								// 放入二级缓存
+								// 从三级缓存删除
+								// 也就是说对于一个单例bean，ObjectFactory#getObject只会调用到一次
+								// 获取到早期bean实例之后，就把这个bean实例从三级缓存升级到二级缓存了
 								this.earlySingletonObjects.put(beanName, singletonObject);
 								this.singletonFactories.remove(beanName);
 							}
