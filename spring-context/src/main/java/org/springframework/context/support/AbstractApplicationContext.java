@@ -541,6 +541,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		return this.applicationListeners;
 	}
 
+	/**
+	 * https://blog.csdn.net/qwe6112071/article/details/85224582
+	 * @throws BeansException
+	 * @throws IllegalStateException
+	 */
 	@Override
 	public void refresh() throws BeansException, IllegalStateException {
 		synchronized (this.startupShutdownMonitor) {
@@ -564,6 +569,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				//允许在上下文的子类中对bean factory进行后处理
 				//spring中并没有具体去实现postProcessBeanFactory方法，是提供给想要实现BeanPostProcessor的三方框架使用的
 				// Allows post-processing of the bean factory in context subclasses.
+				//https://blog.csdn.net/qq_28802119/article/details/82908592, https://www.jianshu.com/p/c05aea93b939
 				postProcessBeanFactory(beanFactory);
 
 				StartupStep beanPostProcess = this.applicationStartup.start("spring.context.beans.post-process");
@@ -572,6 +578,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				//比如PropertyPlaceholderConfigurer在这里被调用
 				//BeanFactoryPostProcessor:实现该接口，可以在spring的bean创建之前，修改bean的定义属性。
 				// Invoke factory processors registered as beans in the context.
+				//https://blog.csdn.net/baidu_19473529/article/details/81152109, https://blog.csdn
+				// .net/caihaijiang/article/details/35552859, https://blog.csdn.net/wrs120/article/details/84554366
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				//注册用于拦截Bean创建过程中的BeanPostProcessors
@@ -586,9 +594,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 				//初始化上下文广播事件
 				// Initialize event multicaster for this context.
+				//https://zhuanlan.zhihu.com/p/344113168
 				initApplicationEventMulticaster();
 
 				//空实现, 能被复写来添加特殊context刷新工作的模板方法。在实例化单例之前,调用初始化特殊bean.
+				//https://blog.csdn.net/zhang_ly520/article/details/83320581
 				// Initialize other special beans in specific context subclasses.
 				onRefresh();
 

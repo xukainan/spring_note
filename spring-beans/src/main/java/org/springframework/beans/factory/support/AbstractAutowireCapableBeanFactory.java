@@ -503,6 +503,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// Prepare method overrides.
 		try {
 			// 准备方法覆盖，主要为lookup-method,replace-method等配置准备
+			//https://blog.csdn.net/lyc_liyanchao/article/details/82901216
 			mbdToUse.prepareMethodOverrides();
 		}
 		catch (BeanDefinitionValidationException ex) {
@@ -1169,6 +1170,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	 * @see #instantiateUsingFactoryMethod
 	 * @see #autowireConstructor
 	 * @see #instantiateBean
+	 * https://blog.csdn.net/finalcola/article/details/81451019
 	 */
 	protected BeanWrapper createBeanInstance(String beanName, RootBeanDefinition mbd, @Nullable Object[] args) {
 		// Make sure bean class is actually resolved at this point.
@@ -1438,6 +1440,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 					//这里是在spring处理完默认的成员属性，应用到指定的bean之前进行回调，可以用来检查和修改属性，最终返回的PropertyValues会应用到bean中
 					//@Autowired、@Resource等就是根据这个回调来实现最终注入依赖的属性的。
 					//在配置的BeanDefinition的propertyValues被设置到bean实例中之前，我们有机会拦截属性，并更改属性。
+					//https://blog.csdn.net/David_lou/article/details/107015539
+					//https://www.cnblogs.com/zhangjianbin/p/10059191.html
 					pvsToUse = bp.postProcessPropertyValues(pvs, filteredPds, bw.getWrappedInstance(), beanName);
 					if (pvsToUse == null) {
 						return;

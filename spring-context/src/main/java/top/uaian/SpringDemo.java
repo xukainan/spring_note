@@ -7,6 +7,10 @@ import top.uaian.service.UserService;
 
 public class SpringDemo {
 
+
+	/**
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		//创建容器
 		AnnotationConfigApplicationContext annotationConfigApplicationContext =
