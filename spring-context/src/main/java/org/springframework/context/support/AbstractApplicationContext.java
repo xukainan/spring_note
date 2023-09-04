@@ -575,11 +575,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				StartupStep beanPostProcess = this.applicationStartup.start("spring.context.beans.post-process");
 
 				//在Bean未开始实例化前，对BeanDefinition的修改入口
-				//比如PropertyPlaceholderConfigurer在这里被调用
+				//比如PropertyPlaceholderConfigurer在这里被调用（引入外部属性的）
 				//BeanFactoryPostProcessor:实现该接口，可以在spring的bean创建之前，修改bean的定义属性。
 				// Invoke factory processors registered as beans in the context.
-				//https://blog.csdn.net/baidu_19473529/article/details/81152109, https://blog.csdn
-				// .net/caihaijiang/article/details/35552859, https://blog.csdn.net/wrs120/article/details/84554366
+				//https://blog.csdn.net/baidu_19473529/article/details/81152109, https://blog.csdn.net/caihaijiang/article/details/35552859, https://blog.csdn.net/wrs120/article/details/84554366
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				//注册用于拦截Bean创建过程中的BeanPostProcessors

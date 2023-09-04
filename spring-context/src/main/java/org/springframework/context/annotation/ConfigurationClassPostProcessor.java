@@ -274,20 +274,24 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	 * {@link Configuration} classes.
 	 */
 	public void processConfigBeanDefinitions(BeanDefinitionRegistry registry) {
-		List<BeanDefinitionHolder> configCandidates = new ArrayList<>();
-		String[] candidateNames = registry.getBeanDefinitionNames();
-
-		for (String beanName : candidateNames) {
-			BeanDefinition beanDef = registry.getBeanDefinition(beanName);
-			if (beanDef.getAttribute(ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE) != null) {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Bean definition has already been processed as a configuration class: " + beanDef);
+			List<BeanDefinitionHolder> configCandidates = new ArrayList<>();//配置类候选集合
+			String[] candidateNames = registry.getBeanDefinitionNames();
+			//没有完成扫描之前，Spring有五个内置的bd还有AppConfig，扫描它们
+			//判断这些bd有没有加@Configuration，如果加了就在bd中设置一个key configurationClass和一个值full
+			//如果没加就设置一个key configurationClass和一个值lite
+			for (String beanName : candidateNames) {
+				BeanDefinition beanDef = registry.getBeanDefinition(beanName);
+				//第一次获取为空，表示没有验证过是否是配置类
+				if (beanDef.getAttribute(ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE) != null) {
+					if (logger.isDebugEnabled()) {
+						logger.debug("Bean definition has already been processed as a configuration class: " + beanDef);
+					}
+				}
+				//验证是否是配置类
+				else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
+					configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
 				}
 			}
-			else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
-				configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
-			}
-		}
 
 		// Return immediately if no @Configuration classes were found
 		if (configCandidates.isEmpty()) {
@@ -295,6 +299,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		}
 
 		// Sort by previously determined @Order value, if applicable
+		//根据@order注解排序
 		configCandidates.sort((bd1, bd2) -> {
 			int i1 = ConfigurationClassUtils.getOrder(bd1.getBeanDefinition());
 			int i2 = ConfigurationClassUtils.getOrder(bd2.getBeanDefinition());
@@ -328,6 +333,9 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size());
 		do {
 			StartupStep processConfig = this.applicationStartup.start("spring.context.config-classes.parse");
+			//执行完成之后，Spring扫描@ComponentScan(“”)
+			//把@Import注解处理
+			//把ImportBeanDefinitionRegister类型的Bean实例化并且放到一个importBeanDefinitionRegister缓存中
 			parser.parse(candidates);
 			parser.validate();
 
